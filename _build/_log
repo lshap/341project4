@@ -164,8 +164,8 @@
 # Target: phase1.cmx, tags: { compile, extension:cmx, extension:ml, file:phase1.cmx, file:phase1.ml, implem, native, ocaml, quiet }
 /usr/local/bin/ocamlopt.opt -c -o phase1.cmx phase1.ml
 + /usr/local/bin/ocamlopt.opt -c -o phase1.cmx phase1.ml
-File "phase1.ml", line 310, characters 22-31:
-Error: This expression has type Ll.ty but an expression was expected of type
-         'a * 'b
+File "phase1.ml", line 318, characters 62-66:
+Error: This expression has type int32 but an expression was expected of type
+         Ll.operand = Ll.ty * Ll.opn
 Command exited with code 2.
 # Compilation unsuccessful.
