@@ -307,16 +307,23 @@ and cmp_lhs (c:ctxt) (l:Range.t Ast.lhs) : operand * stream =
 			    let (lop, code2) = cmp_lhs c lhs in
 			    let elt_ty = fst lop in
 			    let index_id = fst (gen_local_op (Ptr elt_ty) "index_ptr") in
-			    let sizeTy =  fst (lop) in
 			    let size = 
-			    begin match sizeTy with
-			     |Ll.Array (i, _) -> i
+			    begin match elt_ty with
+			    | Ll.Ptr p-> begin match p with
+			      | Ll.Ptr p2 -> begin match p2 with
+				                 | Struct s -> begin match s with
+						               | h1::h2::[] -> begin match h2 with
+								                |Array(i, _) -> i
+								               end
+								end
+						    end
+			                      end
+					 
 			     |_ -> failwith "expected array but found something else"
 			    end in
 			    let (ptr_id, ptr_op) = gen_local_op (Array(size, elt_ty)) "array_ptr" in
-     
-			    (lop, [I(Call(Some ptr_id, oat_array_bounds_check_fn, [size;eop]));
-				   I(Gep(index_id,lop,[(eop)]))]>@code2>@code1)     
+			    (lop, [I(Call(None, oat_array_bounds_check_fn, [(i32_op_of_int32 size); eop]));
+				   I(Gep(index_id,lop,[(eop)]))]@code2@code1)     
 
 (* When we treat a left-hand-side as an expression yielding a value,
    we actually load from the resulting pointer. *)
