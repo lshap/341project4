@@ -117,8 +117,23 @@ let  tc_const (cn:Range.t const) : typ =
     | Cint _ -> TInt
     | Cstring _ -> TString
 
+let rec check_length_of_array (c:ctxt)(args: ('a exp) list): typ = 
+  let arg = 
+  begin match args with
+    |[h]->h
+    |_->let info_msg = "expected exactly one input for length_of_array" in
+		     type_error info_msg
+  end
+      in
+  let typ2 = tc_exp c arg in
+  begin match typ2 with
+    |TArray t -> TInt
+    |_-> let info_msg = "expected input to be an array for length_of_array" in
+		     type_error info_msg
+  end
+
 (* Expressions *)
-let rec tc_exp (c:ctxt) (e:Range.t exp) : typ =
+and tc_exp (c:ctxt) (e:Range.t exp) : typ =
   begin match e with  
   | Const c -> tc_const c
   | Lhs l -> tc_lhs c l
@@ -128,25 +143,28 @@ let rec tc_exp (c:ctxt) (e:Range.t exp) : typ =
                            |_ -> let error_msg = "first expression must evaluate to a TInt." in
                                  type_error error_msg
                           end;
-			  let c2 = c in
-                          add_local (snd i) TInt c2; 
+			  let c2 = add_local (snd i) TInt c in 
                           let t2 = tc_exp c2 e2 in 
 			  TArray t2
   | Binop (b, e1, e2) -> tc_bop b (tc_exp c e1) (tc_exp c e2)
   | Unop (u, e) -> tc_unop u (tc_exp c e) 
-  | Ecall(i, elist) ->  let ft = lookup_global_fn (snd i) c in
+  | Ecall(i, elist) ->  let fid = snd i in
+			if(fid = "length_of_array") then 
+			 check_length_of_array c elist
+			else let ft = lookup_global_fn fid c in
                         begin match ft with
-			| Some f -> tc_fn_args c (fst f) elist; 
-			  begin match snd (f) with
-			   | Some ft -> ft
+			| Some ftype -> tc_fn_args c (fst ftype) elist; 
+			  begin match snd (ftype) with
+			   | Some rt -> rt
 			   | None -> type_error "we don't know what to do about this yet."
 			  end
-                        | None -> let error_msg = "Cannot apply"^ (snd i)^"as a function" in 
+                        | None -> let error_msg = "Cannot apply "^ (snd i) ^" as a function" in 
 				  type_error error_msg
 			end		     
-  end
+		end
 
-and tc_fn_args (c:ctxt) (r: typ list)(args: ('a exp) list): unit = 
+
+and tc_fn_args (c:ctxt)(r: typ list)(args: ('a exp) list): unit = 
   begin match r, args with
   | h1::t1, h2::t2 -> let typ2 = tc_exp c h2 in if (h1 = typ2) then tc_fn_args c t1 t2 else 
       let info_msg = "expected type" ^ (string_of_typ h1)^" but found type " ^ (string_of_typ typ2) in
@@ -157,9 +175,33 @@ and tc_fn_args (c:ctxt) (r: typ list)(args: ('a exp) list): unit =
 
 (* Left-hand sides *)
 and tc_lhs (c:ctxt) (l:Range.t lhs) : typ =
-failwith "unimplemented"
-
-
+  begin match l with
+    | Var v -> let id = snd v in
+	       begin match lookup_local id c with
+		 |Some t -> t
+		 |None -> begin match lookup_global_val id c with
+		             |Some t -> t
+			     |None->let error_msg = 
+				      "variable neither global nor local" in
+				    type_error error_msg
+			  end
+		 end
+ (* variable *)
+    | Index (l,e)-> let t1 = tc_exp c e in 
+                    begin match t1 with
+                      | TInt -> () 
+                      |_ -> let error_msg = 
+			      "first expression must evaluate to a TInt." in
+                                 type_error error_msg
+                          end;
+		    let t2 = tc_lhs c l in
+		    begin match t2 with
+		      |TArray t -> t
+		      |_->let error_msg = 
+			      "LHS should be an array in this case." in
+                                 type_error error_msg
+                          end	
+  end
 
 
 (* An optional exception is used in For loops, it must have type bool *)
@@ -171,17 +213,96 @@ let tc_opt_exp (c:ctxt) (eo:(Range.t opt_exp)) : unit =
 	  assert_equal_types (exp_info e) TBool found
   end
 
+let rec init_list (c:ctxt) (expected:typ) 
+    (l:(Range.t init) list) : unit = 
+  begin match l with
+       | h::t-> tc_init c expected h;
+			init_list c expected t
+       | []->()
+  end
+
 (* Variable initializers *)
-let rec tc_init (c:ctxt) (expected:typ) (i:Range.t init) : unit =
-failwith "unimplemented"
+and tc_init (c:ctxt) (expected:typ) (i:Range.t init) : unit =
+  begin match i with
+    |Iexp exp -> let t = tc_exp c exp in
+		 if(t = expected) then () else let error_msg = 
+		       "Init not of expected type" in
+                        type_error error_msg
+    |Iarray (e,l) -> let internal_type = 
+		       begin match expected with
+                         |TArray t -> t
+			 |_->let error_msg = 
+		       "List but not an array" in
+                        type_error error_msg
+		       end in
+      init_list c internal_type l
+  end
+
+
+let rec work_vlist (c:ctxt) (vdecls:(Range.t vdecl) list) : ctxt =
+  begin match vdecls with
+    |h::t-> tc_init c h.v_ty h.v_init;
+      let local_var = lookup_local (snd h.v_id) c in
+      begin match local_var with
+       |Some t -> let error_msg = "Cannot shadow local variables" in 
+		  type_error error_msg
+       | None -> let new_context = add_local (snd h.v_id) h.v_ty c in
+                work_vlist new_context t
+      end 
+    |[]->c
+  end
 
 (* List of variable declarations *)
 let tc_vdecls (c:ctxt) (vdecls:(Range.t vdecl) list) : ctxt =
-failwith "unimplemented"
+  work_vlist c vdecls
+
 
 (* Statements *)
 let rec tc_stmt (c:ctxt) (s:Range.t stmt) : unit =
-failwith "unimplemented"
+  begin match s with
+    | Assign (l,e)->let t1 = tc_lhs c l in
+		    let t2 = tc_exp c e in
+		    if (t1 = t2) then ()
+		    else let error_msg = "assign mistyped" in
+                                 type_error error_msg;
+    (* assignment *)
+    | Scall (i,elist)-> let ftoption = lookup_global_fn (snd i) c in
+			begin match ftoption with
+			  | Some ft -> 
+			    begin match (snd ft) with
+			      |Some s ->let error_msg = 
+		"Trying to call a non-unit function without assignment" in
+                                 type_error error_msg
+			      |None->tc_fn_args c (fst ft) elist
+			    end;
+			  | None -> let error_msg = "Trying to call an unknown function" in
+                                 type_error error_msg
+			 end
+    (* function call *)
+    | If (e,s1,soption)-> let t1 = tc_exp c e in 
+                   begin match t1 with
+                    | TBool -> () 
+                    |_ -> let error_msg = "'if' expression must be a TBool." in
+                                 type_error error_msg
+                          end;
+		   tc_stmt c s1;
+		   tc_opt_stmt c soption
+    (* if-then, optional else *)
+    | While (e,s)->let t1 = tc_exp c e in 
+                   begin match t1 with
+                    | TBool -> () 
+                    |_ -> let error_msg = "'while' expression must be a TBool." in
+                                 type_error error_msg
+                          end;
+		   tc_stmt c s
+    (* while loop *)
+    | For (vdls, opte,soption,s2)-> let c2  = tc_vdecls c vdls in
+				    tc_opt_exp c2 opte;
+				    tc_opt_stmt c2 soption;
+				    tc_stmt c2 s2
+    (* for loop *)
+    | Block b-> let c2 = tc_block c b in ()(* block *)
+  end
 
 (* Sequence of statements *)
 and tc_stmts (c:ctxt) (stmts:'a stmts) : unit =

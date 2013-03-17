@@ -263,6 +263,8 @@ let typechecking_tests : suite = [
 		 "tc18";
 		 "tc19";
 		 "tc20";
+		 "tc_ok3";	       
+		 "run51";
 	       ]);
 
   GradedTest("Typechecking correctness tests", 15, 
@@ -270,7 +272,6 @@ let typechecking_tests : suite = [
 	       [
 		 "tc_ok1";	       
 		 "tc_ok2";	       
-		 "tc_ok3";	       
 		 "tc_ok4";	       
 		 "tc_ok5";	       
 		 "tc_ok6";	       
@@ -305,7 +306,6 @@ let file_tests : suite = [
     ("run42", file_test "run42.oat" "" "2");
     ("run49", file_test "run49.oat" "" "abc0");
     ("run50", file_test "run50.oat" "" "abcde0");
-    ("run51", file_test "run51.oat" "" "11");
     ("run52", file_test "run52.oat" "" "11");
     ("run60", file_test "run60.oat" "" "341");
     ("run61", file_test "run61.oat" "" "3410");
