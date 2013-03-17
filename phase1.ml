@@ -302,9 +302,16 @@ and cmp_lhs (c:ctxt) (l:Range.t Ast.lhs) : operand * stream =
 		| Some op -> (op, [])
 	      end
 	  | Some op -> (op, [])
-	end
-    | Ast.Index(lhs,exp) ->
-failwith "unimplemented"
+	 end
+    | Ast.Index(lhs,exp) -> let (eop, code1) = cmp_exp c exp in
+			    let (lop, code2) = cmp_lhs c lhs in
+			    let elt_ty = fst lop in
+			    let index_id = fst (gen_local_op (Ptr elt_ty) "index_ptr") in
+			    let size = fst (fst lop) in
+			    let (ptr_id, ptr_op) = gen_local_op (cmp_ty (Ast.TArray elt_ty)) "array_ptr" in
+     
+			    (lop, [I(Call(Some ptr_id, oat_array_bounds_check_fn, [size]));
+				   I(Gep(index_id,lop,[(eop)]))]>@code2>@code1)     
 
 (* When we treat a left-hand-side as an expression yielding a value,
    we actually load from the resulting pointer. *)
