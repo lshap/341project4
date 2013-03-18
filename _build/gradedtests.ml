@@ -357,7 +357,7 @@ let file_tests : suite = [
     ("hsort", file_test "hsort.oat" "" "0");
     ("stoogesort", file_test "stoogesort.oat" "" "-2435-63177-5759-3100");
     ("selectionsort", file_test "selectionsort.oat" "" "01253065992000");
-    ("matrixmult", file_test "matrixmult.oat" "" 
+    ("matrixmult", file_test "matrixmult.oat" ""
        "19 16 13 23 \n5 6 7 6 \n19 16 13 23 \n5 6 7 6 \n0");
 
   ]);
@@ -383,6 +383,16 @@ let manual_tests : suite = [
   
   ]);
 ]
+
+
+
+
+
+
+
+
+
+
 
 let graded_tests : suite = 
   

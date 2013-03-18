@@ -268,6 +268,12 @@ let rec cmp_exp (c:ctxt) (exp:Range.t Ast.exp) : (operand * stream) =
 
   | Ast.New(elem_ty,e1,id,e2) -> let (size_exp_op, size_code) = cmp_exp c e1 in
 				 let (arr_op, arr_code) = oat_alloc_array_dynamic elem_ty size_exp_op in
+				 let arr_op_ptr_id =
+				 begin match arr_op with
+				  |(arr_t, arr_id) -> arr_id
+				  |_ -> failwith "arr_op should be an operand"
+				 end in
+				 let arr_op_ptr = (Ptr(Ptr(cmp_ty elem_ty)), arr_op_ptr_id) in
 				 let store_size = cmp_array_update_static (Ast.TInt) (0) (arr_op) (size_exp_op) in
 				 let init_ind = i32_op_of_int 0 in
 				 let const_one = i32_op_of_int 1 in
@@ -276,14 +282,16 @@ let rec cmp_exp (c:ctxt) (exp:Range.t Ast.exp) : (operand * stream) =
 			
 				 
 				 (* compile the function expresssion *)
-				 let (parameter, param_op) = gen_local_op I32 (snd id) in
+				 let (parameter, param_op) = gen_local_op (Ptr (I32)) (snd id) in
 				 let c2 = add_local c (snd id) param_op in
 				 let (fn_op, fn_code) = cmp_exp c2 e2 in 
 				 let compare_lbl = mk_lbl_hint "compare" in
 				 let body_lbl = mk_lbl_hint "body" in
 				 let end_lbl = mk_lbl_hint "end" in
+				 let tystring = string_of_operand arr_op_ptr in
+				 Printf.printf "The type of the NEW array is %s \n" tystring;
+(arr_op_ptr, ([L(end_lbl);T(Br compare_lbl);I(Binop(index_id, Add,index_op, const_one))]@fn_code@[I(Store(index_op, param_op));(L(body_lbl));T(Cbr(cmp_op,body_lbl,end_lbl));I(Icmp(cmp_id,Slt,index_op,size_exp_op));(L(compare_lbl));T(Br compare_lbl);I(Store(init_ind, index_op))])@(store_size)@(arr_code)@(size_code))
 
-(arr_op, ([L(end_lbl);T(Br compare_lbl);I(Binop(index_id, Add,index_op, const_one))]@fn_code@[I(Store(index_op, param_op));(L(body_lbl));T(Cbr(cmp_op,body_lbl,end_lbl));I(Icmp(cmp_id,Slt,index_op,size_exp_op));(L(compare_lbl));T(Br compare_lbl);I(Store(init_ind, index_op))])@(store_size)@(arr_code)@(size_code))
 				 
 
 (* Because length_of_array is polymorphic, we'd have to use bitcast to
@@ -345,10 +353,12 @@ and cmp_lhs (c:ctxt) (l:Range.t Ast.lhs) : operand * stream =
 and cmp_lhs_exp c (l:Range.t Ast.lhs) : operand * stream =
   let (lhs_op, lhs_code) = cmp_lhs c l in
     begin match lhs_op with
-      | (Ptr t, _) ->
+      | (Ptr t, _) -> print_endline "found a ptr";
 	  let (ans_id, ans_op) = gen_local_op t "_lhs" in
 	    (ans_op, lhs_code >:: I (Load(ans_id, lhs_op)))
-      | (t, _) -> failwith (Printf.sprintf "Compiler invariant failed: cmp_lhs_exp %s had non-pointer type" (string_of_operand lhs_op))
+      | (t, _) ->
+	print_string( "found something of type " ^ (string_of_ty t));
+failwith (Printf.sprintf "Compiler invariant failed: cmp_lhs_exp %s had non-pointer type" (string_of_operand lhs_op))
     end
 
 
