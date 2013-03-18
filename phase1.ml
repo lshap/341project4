@@ -273,7 +273,7 @@ let rec cmp_exp (c:ctxt) (exp:Range.t Ast.exp) : (operand * stream) =
 				  |(arr_t, arr_id) -> arr_id
 				  |_ -> failwith "arr_op should be an operand"
 				 end in
-				 let arr_op_ptr = (Ptr(Ptr(cmp_ty elem_ty)), arr_op_ptr_id) in
+				 let arr_op_ptr = (Ptr(cmp_ty elem_ty), arr_op_ptr_id) in
 				 let store_size = cmp_array_update_static (Ast.TInt) (0) (arr_op) (size_exp_op) in
 				 let init_ind = i32_op_of_int 0 in
 				 let const_one = i32_op_of_int 1 in

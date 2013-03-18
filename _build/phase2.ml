@@ -269,6 +269,13 @@ let compile_insn globals stack (i : Ll.insn) : X86.insn list =
       (* Push the arguments, call the function, move the result (if
 	 any) to the destination, and then clean up the stack. *)
       | Ll.Call(iopt,{name=fid;_},args) ->
+	(* let fn_lbl = mk_lbl_hint fid in  *)
+	(* let push_args =  *)
+	(* begin match args with *)
+	(*  | h::t -> (Push(eax))::[val_op h]) *)
+	(*  | [] -> [] *)
+	(* end in *)
+        (* ([J(Eq, fn_lbl)]@push_args@[Mov(ebp, esp);Push(ebp)]) *)
 failwith "unimplemented"
 
       (* Bitcast is effectively just a Mov at the assembly level *)
