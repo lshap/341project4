@@ -329,48 +329,42 @@ and cmp_lhs (c:ctxt) (l:Range.t Ast.lhs) : operand * stream =
 	 end
     | Ast.Index(lhs,exp) -> let (eop, code1) = cmp_exp c exp in
 			    let (lop, code2) = cmp_lhs c lhs in
+			    let dr_lop:operand =
+			    begin match lop with
+			    | ((Ptr t), y) -> (t,y)
+			    end in
+
 			    let elt_ty = fst lop in
 			    let index_id = fst (gen_local_op (Ptr elt_ty) "index_ptr") in
-			    let size = 
-			    begin match elt_ty with
-			    | Ll.Ptr p-> begin match p with
-			      | Ll.Ptr p2 -> begin match p2 with
-				                 | Struct s -> begin match s with
-						               | h1::h2::[] -> begin match h2 with
-								                |Array(i, _) -> i
-								               end
-								end
-						    end
-			                      end
-					 
-			     |_ -> failwith "expected array but found something else"
-			    end in
-			    (lop, [I(Gep(index_id,lop,gep_array_index (eop))); I(Call(None, oat_array_bounds_check_fn, [(i32_op_of_int32 size); eop]))]@code2@code1)     
+                            let (size_id, size_op) = (gen_local_op (I32) "size_ptr") in
+
+			    (lop, ([ I(Gep(index_id,dr_lop,(gep_array_index (eop)))); 
+				     I(Call(None, oat_array_bounds_check_fn, [size_op; eop])); 
+				     I(Gep(size_id,dr_lop,gep_array_len))]
+				     @code2@code1))     
 
 (* When we treat a left-hand-side as an expression yielding a value,
    we actually load from the resulting pointer. *)
 and cmp_lhs_exp c (l:Range.t Ast.lhs) : operand * stream =
   let (lhs_op, lhs_code) = cmp_lhs c l in
     begin match lhs_op with
-      | (Ptr t, _) -> print_endline "found a ptr";
-	  let (ans_id, ans_op) = gen_local_op t "_lhs" in
-	    (ans_op, lhs_code >:: I (Load(ans_id, lhs_op)))
+      | (Ptr t, _) -> let (ans_id, ans_op) = gen_local_op t "_lhs" in
+	    (ans_op, lhs_code >:: 
+            (I(Load(ans_id, lhs_op))))
       | (t, _) ->
 	print_string( "found something of type " ^ (string_of_ty t));
 failwith (Printf.sprintf "Compiler invariant failed: cmp_lhs_exp %s had non-pointer type" (string_of_operand lhs_op))
     end
 
-
 (* Compile an initializer. *)
 and cmp_init c src_ty init : (operand * stream) =
   begin match init with
-  | Ast.Iexp e -> cmp_exp c e
+  | Ast.Iexp e -> cmp_exp c e 
 
   (* Static arrays, like {1, 2, 3} have known size, so we can unroll
      the loop that initializes them. This does not work for the 'new'
      construct, since the array length isn't known until runtime. *)
-  | Ast.Iarray (_,es) ->
-      begin match src_ty with
+  | Ast.Iarray (_,es) -> begin match src_ty with
 	| Ast.TArray t -> 
 	    let (array_op, array_code) = oat_alloc_array_static t (List.length es) in
 	    let (init_code, _) = List.fold_left
