@@ -282,8 +282,13 @@ let compile_insn globals stack (i : Ll.insn) : X86.insn list =
         [Pop(ebp);Mov(esp,(stack_offset argsize))]@ret_insns@[J(Eq, fn_lbl)]@push_args@[Mov(ebp, esp);Push(ebp)]
 
       (* Bitcast is effectively just a Mov at the assembly level *)
-      | Bitcast (i, op, _) -> 
-failwith "unimplemented"
+      | Bitcast (i, op, _) -> []
+	(* begin match op with *)
+	(* | (Ptr t, _)-> [Mov(dst_op i, eax);val_op op] *)
+	(* (\* | *\) *)
+	(* (\* | *\) *)
+	(* end *)
+  (* failwith "unimplemented" *)
 
       (* Defer to the helper function to compute the pointer value *)
       | Gep (i, op, path) -> 

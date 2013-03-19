@@ -290,7 +290,7 @@ let rec cmp_exp (c:ctxt) (exp:Range.t Ast.exp) : (operand * stream) =
 				 let end_lbl = mk_lbl_hint "end" in
 				 (* let tystring = string_of_operand arr_op_ptr in *)
 				 (* Printf.printf "The type of the NEW array is %s \n" tystring; *)
-(arr_op, ([L(end_lbl);T(Br compare_lbl);I(Binop(index_id, Add,index_op, const_one))]@fn_code@[I(Store(index_op, param_op));(L(body_lbl));T(Cbr(cmp_op,body_lbl,end_lbl));I(Icmp(cmp_id,Slt,index_op,size_exp_op));(L(compare_lbl));T(Br compare_lbl);I(Store(init_ind, index_op))])@(arr_code)@(size_code))
+(arr_op, ([L(end_lbl);T(Br compare_lbl);I(Binop(index_id, Add,index_op, const_one))]@fn_code@[I(Load(parameter, index_op));(L(body_lbl));T(Cbr(cmp_op,body_lbl,end_lbl));I(Icmp(cmp_id,Slt,index_op,size_exp_op));(L(compare_lbl));T(Br compare_lbl);I(Store(init_ind, index_op))])@(arr_code)@(size_code))
 
 				 
 
