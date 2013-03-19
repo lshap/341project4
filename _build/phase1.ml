@@ -273,9 +273,9 @@ let rec cmp_exp (c:ctxt) (exp:Range.t Ast.exp) : (operand * stream) =
 				  |(arr_t, arr_id) -> arr_id
 				  |_ -> failwith "arr_op should be an operand"
 				 end in
-				 let arr_op_ptr = (Ptr(cmp_ty elem_ty), arr_op_ptr_id) in
+				 (* let arr_op_ptr = (Ptr(Ptr(cmp_ty elem_ty)), arr_op_ptr_id) in *)
 				 let store_size = cmp_array_update_static (Ast.TInt) (0) (arr_op) (size_exp_op) in
-				 let init_ind = i32_op_of_int 0 in
+				 let init_ind = i32_op_of_int 1 in
 				 let const_one = i32_op_of_int 1 in
 				 let (index_id, index_op) = gen_local_op (Ptr (cmp_ty elem_ty)) "index_ptr" in
 				 let (cmp_id, cmp_op) = gen_local_op (I1) "comparison_result" in
@@ -288,9 +288,9 @@ let rec cmp_exp (c:ctxt) (exp:Range.t Ast.exp) : (operand * stream) =
 				 let compare_lbl = mk_lbl_hint "compare" in
 				 let body_lbl = mk_lbl_hint "body" in
 				 let end_lbl = mk_lbl_hint "end" in
-				 let tystring = string_of_operand arr_op_ptr in
-				 Printf.printf "The type of the NEW array is %s \n" tystring;
-(arr_op_ptr, ([L(end_lbl);T(Br compare_lbl);I(Binop(index_id, Add,index_op, const_one))]@fn_code@[I(Store(index_op, param_op));(L(body_lbl));T(Cbr(cmp_op,body_lbl,end_lbl));I(Icmp(cmp_id,Slt,index_op,size_exp_op));(L(compare_lbl));T(Br compare_lbl);I(Store(init_ind, index_op))])@(store_size)@(arr_code)@(size_code))
+				 (* let tystring = string_of_operand arr_op_ptr in *)
+				 (* Printf.printf "The type of the NEW array is %s \n" tystring; *)
+(arr_op, ([L(end_lbl);T(Br compare_lbl);I(Binop(index_id, Add,index_op, const_one))]@fn_code@[I(Store(index_op, param_op));(L(body_lbl));T(Cbr(cmp_op,body_lbl,end_lbl));I(Icmp(cmp_id,Slt,index_op,size_exp_op));(L(compare_lbl));T(Br compare_lbl);I(Store(init_ind, index_op))])@(arr_code)@(size_code))
 
 				 
 
@@ -345,8 +345,7 @@ and cmp_lhs (c:ctxt) (l:Range.t Ast.lhs) : operand * stream =
 					 
 			     |_ -> failwith "expected array but found something else"
 			    end in
-			    (lop, [I(Call(None, oat_array_bounds_check_fn, [(i32_op_of_int32 size); eop]));
-				   I(Gep(index_id,lop,[(eop)]))]@code2@code1)     
+			    (lop, [I(Gep(index_id,lop,gep_array_index (eop))); I(Call(None, oat_array_bounds_check_fn, [(i32_op_of_int32 size); eop]))]@code2@code1)     
 
 (* When we treat a left-hand-side as an expression yielding a value,
    we actually load from the resulting pointer. *)

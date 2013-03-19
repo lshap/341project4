@@ -149,6 +149,8 @@
 /usr/local/bin/ocamlopt.opt -c -o tctxt.cmx tctxt.ml # cached
 # Target: tc.cmx, tags: { compile, extension:cmx, extension:ml, file:tc.cmx, file:tc.ml, implem, native, ocaml, quiet }
 /usr/local/bin/ocamlopt.opt -c -o tc.cmx tc.ml # cached
+# Target: phase1.cmx, tags: { compile, extension:cmx, extension:ml, file:phase1.cmx, file:phase1.ml, implem, native, ocaml, quiet }
+/usr/local/bin/ocamlopt.opt -c -o phase1.cmx phase1.ml # cached
 # Target: phase2.ml.depends, tags: { extension:ml, file:phase2.ml, ocaml, ocamldep, quiet }
 /usr/local/bin/ocamldep.opt -modules phase2.ml > phase2.ml.depends
 # Target: phase2.mli.depends, tags: { extension:mli, file:phase2.mli, ocaml, ocamldep, quiet }
@@ -159,29 +161,13 @@
 /usr/local/bin/ocamldep.opt -modules platform.ml > platform.ml.depends # cached
 # Target: platform.cmx, tags: { compile, extension:cmx, extension:ml, file:platform.cmx, file:platform.ml, implem, native, ocaml, quiet }
 /usr/local/bin/ocamlopt.opt -c -o platform.cmx platform.ml # cached
-# Target: phase1.cmx, tags: { compile, extension:cmx, extension:ml, file:phase1.cmx, file:phase1.ml, implem, native, ocaml, quiet }
-/usr/local/bin/ocamlopt.opt -c -o phase1.cmx phase1.ml
-+ /usr/local/bin/ocamlopt.opt -c -o phase1.cmx phase1.ml
-File "phase1.ml", line 339, characters 37-125:
-Warning 8: this pattern-matching is not exhaustive.
-Here is an example of a value that is not matched:
-(Struct _|Ptr _|I32|I8|I1)
-File "phase1.ml", line 338, characters 35-191:
-Warning 8: this pattern-matching is not exhaustive.
-Here is an example of a value that is not matched:
-[]
-File "phase1.ml", line 337, characters 24-249:
-Warning 8: this pattern-matching is not exhaustive.
-Here is an example of a value that is not matched:
-(Array (_, _)|Ptr _|I32|I8|I1)
-File "phase1.ml", line 336, characters 20-317:
-Warning 8: this pattern-matching is not exhaustive.
-Here is an example of a value that is not matched:
-(Array (_, _)|Struct _|I32|I8|I1)
-File "phase1.ml", line 274, characters 7-8:
-Warning 11: this match case is unused.
 # Target: phase2.cmx, tags: { compile, extension:cmx, extension:ml, file:phase2.cmx, file:phase2.ml, implem, native, ocaml, quiet }
 /usr/local/bin/ocamlopt.opt -c -o phase2.cmx phase2.ml
++ /usr/local/bin/ocamlopt.opt -c -o phase2.cmx phase2.ml
+File "phase2.ml", line 205, characters 2-248:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a value that is not matched:
+((_, _), [])
 # Target: occ.cmx, tags: { compile, extension:cmx, extension:ml, file:occ.cmx, file:occ.ml, implem, native, ocaml, quiet }
 /usr/local/bin/ocamlopt.opt -c -o occ.cmx occ.ml
 # Target: Oconfig.ml.depends, tags: { extension:ml, file:Oconfig.ml, ocaml, ocamldep, quiet }
@@ -199,5 +185,5 @@ Warning 11: this match case is unused.
 # Target: main.native, tags: { dont_link_with, extension:native, file:main.native, link, native, ocaml, program, quiet }
 /usr/local/bin/ocamlopt.opt unix.cmxa str.cmxa LibUtil.cmx Oconfig.cmx assert.cmx ast.cmx range.cmx parser.cmx lexer.cmx astlib.cmx x86.cmx ll.cmx ctxt.cmx cunit.cmx lllib.cmx tctxt.cmx tc.cmx phase1.cmx platform.cmx phase2.cmx occ.cmx gradedtests.cmx providedtests.cmx driver.cmx main.cmx -o main.native
 + /usr/local/bin/ocamlopt.opt unix.cmxa str.cmxa LibUtil.cmx Oconfig.cmx assert.cmx ast.cmx range.cmx parser.cmx lexer.cmx astlib.cmx x86.cmx ll.cmx ctxt.cmx cunit.cmx lllib.cmx tctxt.cmx tc.cmx phase1.cmx platform.cmx phase2.cmx occ.cmx gradedtests.cmx providedtests.cmx driver.cmx main.cmx -o main.native
-ld: warning: PIE disabled. Absolute addressing (perhaps -mdynamic-no-pic) not allowed in code signed PIE, but used in _caml_program from /var/folders/jq/1fp_zj1d2mgddhsvh1ln3ffh0000gn/T/camlstartupc97d36.o. To fix this warning, don't compile with -mdynamic-no-pic or link with -Wl,-no_pie
+ld: warning: PIE disabled. Absolute addressing (perhaps -mdynamic-no-pic) not allowed in code signed PIE, but used in _caml_program from /var/folders/jq/1fp_zj1d2mgddhsvh1ln3ffh0000gn/T/camlstartupc6e3b1.o. To fix this warning, don't compile with -mdynamic-no-pic or link with -Wl,-no_pie
 # Compilation successful.

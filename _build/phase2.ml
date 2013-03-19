@@ -171,8 +171,6 @@ let compile_op globals stack : Ll.operand -> X86.insn = function
   | (_, Id id)    -> Mov(eax, compile_id globals stack id)
 
 
-
-
 (* Puts the address computed by a gep computation into eax.  On 32-bit
    x86, the getelementptr instruction supports only i32
    indices. Moreover, the first index must be excactly 0l.  Subsequent
@@ -203,14 +201,19 @@ let compile_gep_path val_op op (path: (ty*opn) list) : insn list =
 	       Imul(Eax, x86_imm_of_int (byte_size_of_ty u));]
 	     @ (val_op offset_op) :: (Mov(ecx, eax)) :: code)
 
-    | _ -> failwith "compile_gep_path encountered unsupported getelementptr data" in
+    | _ -> print_endline ("found type "^ (Lllib.string_of_ty ty)); failwith "compile_gep_path encountered unsupported getelementptr data" in
   match (op, path) with
   | ((Ptr t, _),  (I32, Const 0l)::rest) -> 
      loop t rest [val_op op]
-  | _ -> failwith "compile_gep_path got incorrect parameters"
+  | ((x, _), (t, y)::rest )-> print_endline ("value was "^ (Lllib.string_of_operand (t,y))^"\n"); failwith "compile_gep_path got incorrect parameters"
 
 
-
+let rec compile_push_args globals stack (args: operand list ):X86.insn list =
+  let val_op = compile_op globals stack in
+	begin match args with
+	 | h::t ->  (compile_push_args globals stack t)@([Push(eax); val_op h])
+	 | [] -> []
+	end
 (* LL local ids map to stack slots, so accessing a value means moving
    it from the stack slot into a register for processing. The strategy
    for compiling instructions is to use eax as the primary register for
@@ -269,14 +272,14 @@ let compile_insn globals stack (i : Ll.insn) : X86.insn list =
       (* Push the arguments, call the function, move the result (if
 	 any) to the destination, and then clean up the stack. *)
       | Ll.Call(iopt,{name=fid;_},args) ->
-	(* let fn_lbl = mk_lbl_hint fid in  *)
-	(* let push_args =  *)
-	(* begin match args with *)
-	(*  | h::t -> (Push(eax))::[val_op h]) *)
-	(*  | [] -> [] *)
-	(* end in *)
-        (* ([J(Eq, fn_lbl)]@push_args@[Mov(ebp, esp);Push(ebp)]) *)
-failwith "unimplemented"
+	let fn_lbl = mk_lbl_hint fid in
+	let push_args = compile_push_args globals stack args in
+	let argsize = Int32.mul 4l (Int32.of_int (List.length args)) in
+	let ret_insns = begin match iopt with
+	  | None -> []
+	  | Some i -> [Mov((dst_op i), eax)]
+	end in
+        [Pop(ebp);Mov(esp,(stack_offset argsize))]@ret_insns@[J(Eq, fn_lbl)]@push_args@[Mov(ebp, esp);Push(ebp)]
 
       (* Bitcast is effectively just a Mov at the assembly level *)
       | Bitcast (i, op, _) -> 
@@ -380,6 +383,7 @@ let compile_global (g : Ll.global) =
 (* Compile a top-level program by creating the globals map and then
 compiling the functions in that global context. *)
 let compile_prog (p:Ll.prog) : Cunit.cunit =
+  print_endline("program: \n"^Lllib.string_of_prog p);
   let (globals_cu, globals) = List.split (List.map compile_global p.globals) in
   let functions_cu = List.map (compile_fdecl globals) p.functions in
     (List.concat globals_cu) @ (List.concat functions_cu)
